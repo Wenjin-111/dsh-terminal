@@ -9,7 +9,7 @@
  *   - compactLines: blank collapsing + repeated-line dedupe
  * Run with: node test-echo.mjs
  */
-import { createEchoRenderer, feedEcho, echoTail, compactLines } from "./lib/index.js";
+import { createEchoRenderer, feedEcho, echoTail, echoFull, compactLines } from "./lib/index.js";
 
 let failures = 0;
 const check = (label, actual, expected) => {
@@ -168,6 +168,37 @@ const check = (label, actual, expected) => {
   const s = createEchoRenderer(5);
   feedEcho(s, "1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7");
   check("custom row count scrolls at height", echoTail(s), "3\n4\n5\n6\n7");
+}
+
+{
+  // scrolled-off rows are archived, not dropped: echoFull recovers them all
+  const s = createEchoRenderer(5);
+  feedEcho(s, "1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7");
+  check("scrollback: full history recoverable", echoFull(s), "1\n2\n3\n4\n5\n6\n7");
+}
+
+{
+  // ED mode 3 clears only the scrollback, not the screen
+  const s = createEchoRenderer(5);
+  feedEcho(s, "a\r\nb\r\nc\r\nd\r\ne\r\nf");
+  const tailBefore = echoTail(s);
+  feedEcho(s, "\x1b[3J");
+  check("ED mode 3 keeps screen tail", echoTail(s), tailBefore);
+  check("ED mode 3 clears scrollback", echoFull(s), tailBefore);
+}
+
+{
+  // wide CJK glyphs occupy two columns: a cursor-left overwrite must realign
+  const s = createEchoRenderer();
+  feedEcho(s, "你好\x1b[2Dab");
+  check("CJK width: overwrite realigns past wide glyphs", echoTail(s), "你ab");
+}
+
+{
+  // emoji are two columns wide too
+  const s = createEchoRenderer();
+  feedEcho(s, "A😀\x1b[2DZ");
+  check("emoji width: overwrite realigns", echoTail(s), "AZ");
 }
 
 // ── compactLines ────────────────────────────────────────────────────────────

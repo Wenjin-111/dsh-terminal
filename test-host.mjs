@@ -5,7 +5,7 @@
  * terminal's content is unreadable".
  * Run with: node test-host.mjs
  */
-import { TerminalManager, createEchoRenderer, feedEcho, echoTail, compactLines } from "./lib/index.js";
+import { TerminalManager, createEchoRenderer, feedEcho, echoFull, echoTail, compactLines } from "./lib/index.js";
 
 const RING_MAX = 2 * 1024 * 1024;
 
@@ -82,7 +82,7 @@ function toolRead(handle, limit = 8000) {
   const { text, exit } = handle.read(0);
   const state = createEchoRenderer(handle.pty?.rows ?? 100);
   feedEcho(state, text);
-  let body = echoTail(state);
+  let body = echoFull(state);
   if (body.length > limit) {
     body = body.slice(-limit);
     const nl = body.indexOf("\n");
@@ -272,6 +272,27 @@ function toolRead(handle, limit = 8000) {
   check("T9 write after exit throws", threw);
   const r = manager.read(s9, t.id, 0);
   check("T9 read after exit still works and reports exit", r.exit !== null && r.text.includes("echo hi\r"), JSON.stringify(r));
+}
+
+// ── T10: scrollback — scrolled-off content stays recoverable ────────────────
+{
+  const s10 = "session-10";
+  const t = manager.create(s10, { shell: "cmd", cols: 100, rows: 5, pty: makePty(100, 5) });
+  const handle = manager.requireHandle(s10, t.id);
+  // 7 lines into a 5-row screen: lines 1..2 must scroll into the scrollback
+  handle.pty.emitData("1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7");
+  const { body } = toolRead(handle);
+  check("T10 scrollback preserves scrolled-off lines", body.includes("1") && body.includes("2") && body.includes("7"), body);
+}
+
+// ── T11: wide glyphs advance two columns — overwrite stays aligned ──────────
+{
+  const s11 = "session-11";
+  const t = manager.create(s11, { shell: "cmd", cols: 100, rows: 28, pty: makePty() });
+  const handle = manager.requireHandle(s11, t.id);
+  handle.pty.emitData("你好\x1b[2Dab");
+  const { body } = toolRead(handle);
+  check("T11 CJK overwrite realigns after wide glyphs", body.includes("你ab") && !body.includes("好"), body);
 }
 
 // ── summary ─────────────────────────────────────────────────────────────────
