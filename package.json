@@ -26,8 +26,6 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
     "@lydell/node-pty": "1.2.0-beta.15",
     "zod": "^3.24.1"

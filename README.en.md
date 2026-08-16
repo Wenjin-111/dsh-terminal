@@ -34,7 +34,7 @@ dsh plugin --profile web add git+https://github.com/Wenjin-111/dsh-terminal.git
 
 **Restart the gateway for it to take effect**: restart the `dsh web` process (this disconnects the current session).
 
-> Dependencies: the host depends on `@lydell/node-pty` (platform binaries are pre-packed via its optionalDependencies, no install script), `@deepseek-ai/dsh-typert-protocol` / `dsh-tools` / `dsh-llm`, and `zod`.
+> Dependencies: the host depends on `@lydell/node-pty` (platform binaries are pre-packed via its optionalDependencies, no install script), `@deepseek-ai/dsh-typert-protocol`, and `zod`. The plugin does not depend on `dsh-tools` / `dsh-llm` directly; tool registration and message construction go through `ctx`-injected services, avoiding a second fork of host packages in the profile that would make module-level `Symbol`s mismatch.
 
 ## Usage
 

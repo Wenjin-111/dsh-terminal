@@ -34,7 +34,7 @@ dsh plugin --profile web add git+https://github.com/Wenjin-111/dsh-terminal.git
 
 **重启网关后生效**：重启 `dsh web` 进程（重启会断开当前会话）。
 
-> 依赖说明：宿主依赖 `@lydell/node-pty`（平台二进制通过其 optionalDependencies 预打包，无安装脚本）、`@deepseek-ai/dsh-typert-protocol` / `dsh-tools` / `dsh-llm`、`zod`。
+> 依赖说明：宿主依赖 `@lydell/node-pty`（平台二进制通过其 optionalDependencies 预打包，无安装脚本）、`@deepseek-ai/dsh-typert-protocol`、`zod`。插件不直接依赖 `dsh-tools` / `dsh-llm`，工具注册与消息构造均走 `ctx` 注入服务，避免在 profile 内 fork 出第二份宿主包导致模块级 Symbol 不一致。
 
 ## 使用
 
