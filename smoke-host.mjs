@@ -12,9 +12,9 @@ const fakeAgent = {
     this.messages.push({ wake: false, message });
     console.log("[agent.inject]", message.content[0].text.slice(0, 140).replaceAll("\n", " ⏎ "));
   },
-  followup(message) {
+  steer(message) {
     this.messages.push({ wake: true, message });
-    console.log("[agent.followup]", message.content[0].text.slice(0, 140).replaceAll("\n", " ⏎ "));
+    console.log("[agent.steer]", message.content[0].text.slice(0, 140).replaceAll("\n", " ⏎ "));
   },
 };
 agents.set("session-1", fakeAgent);
@@ -73,7 +73,7 @@ console.log("7) notify agent");
 manager.notify("session-1", created.id);
 console.log("   agent messages now:", fakeAgent.messages.length, "| last wake:", fakeAgent.messages.at(-1)?.wake);
 
-console.log("8) kill + exit followup");
+console.log("8) kill + exit steer");
 manager.kill("session-1", created.id);
 await new Promise((resolve) => setTimeout(resolve, 1500));
 console.log("   agent messages:", fakeAgent.messages.length, "| wake events:", fakeAgent.messages.filter((m) => m.wake).length);

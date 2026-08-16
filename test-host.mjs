@@ -66,7 +66,7 @@ const ctx = {
       inject(msg) {
         messages.push({ wake: false, text: msg.content[0].text });
       },
-      followup(msg) {
+      steer(msg) {
         messages.push({ wake: true, text: msg.content[0].text });
       },
     }),
