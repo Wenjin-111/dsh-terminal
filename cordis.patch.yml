@@ -1,0 +1,4 @@
+# dsh-terminal bundle patch: mount the host half at startup.
+- insert:
+    - id: dsh-terminal
+      name: dsh-terminal
