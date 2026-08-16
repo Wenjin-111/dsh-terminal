@@ -105,7 +105,17 @@ const CUSTOM_CSS = `
 .dtw-btn{font:inherit;font-size:12px;line-height:20px;color:var(--dsw-alias-label-primary);cursor:pointer;background:transparent;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:2px 9px;flex:none}
 .dtw-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-solid)}
 .dtw-btn:disabled{cursor:default;opacity:.55}
-.dtw-select{font:inherit;font-size:12px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:2px 24px 2px 10px;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a9099' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:10px 6px}
+.dtw-select-wrap{position:relative;flex:none}
+.dtw-select{font:inherit;font-size:12px;line-height:20px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:2px 26px 2px 10px;appearance:none;-webkit-appearance:none;cursor:pointer;text-align:left;white-space:nowrap;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a9099' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:10px 6px}
+.dtw-select:hover{background-color:var(--dsw-alias-interactive-bg-hover-solid)}
+.dtw-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:100%;z-index:60;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--dsw-alias-bg-layer-3,#232529);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;box-shadow:var(--dsw-shadow-lv2,0 12px 32px rgba(0,0,0,.35))}
+.dtw-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;line-height:20px;text-align:left;cursor:pointer;white-space:nowrap}
+.dtw-menu-item:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
+.dtw-menu-item[data-selected="true"]{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-state-business-primary)}
+.dtw-menu-item:disabled{opacity:.5;cursor:default}
+.dtw-menu-check{width:14px;flex:none;color:var(--dsw-alias-state-business-primary);text-align:center}
+.dtw-menu-label{flex:1 1 auto}
+.dtw-menu-unavailable{color:var(--dsw-alias-label-tertiary);font-size:11px;flex:none}
 .dtw-spacer{flex:1 1 auto}
 .dtw-status{padding:6px 12px 0;font-size:12px;flex:none}
 .dtw-status-ok{color:var(--dsw-alias-state-success-primary)}
@@ -776,6 +786,74 @@ function TerminalPane({ sessionId, item, active }) {
   );
 }
 
+function ShellPicker({ shells }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  const current = shells.find((shell) => shell.kind === shellChoice) ?? shells[0] ?? { kind: "powershell", label: "PowerShell", available: true };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (event) => {
+      if (wrapRef.current != null && wrapRef.current.contains(event.target)) return;
+      setOpen(false);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  return (
+    <div className="dtw-select-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className="dtw-select"
+        aria-haspopup="listbox"
+        aria-expanded={open ? "true" : "false"}
+        aria-label={localeT("shell")}
+        title={current.label}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {current.label}
+      </button>
+      {open ? (
+        <div className="dtw-menu" role="listbox" aria-label={localeT("shell")}>
+          {shells.map((shell) => {
+            const selected = shell.kind === shellChoice;
+            return (
+              <button
+                key={shell.kind}
+                type="button"
+                role="option"
+                aria-selected={selected ? "true" : "false"}
+                className="dtw-menu-item"
+                data-selected={selected ? "true" : "false"}
+                disabled={!shell.available}
+                onClick={() => {
+                  if (!shell.available) return;
+                  shellChoice = shell.kind;
+                  bump();
+                  setOpen(false);
+                }}
+              >
+                <span className="dtw-menu-check" aria-hidden="true">{selected ? "✓" : ""}</span>
+                <span className="dtw-menu-label">{shell.label}</span>
+                {shell.available ? null : <span className="dtw-menu-unavailable">{localeT("unavailable")}</span>}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function TerminalWindow() {
   useVersion();
   const open = windowOpen;
@@ -959,7 +1037,7 @@ function TerminalWindow() {
   // ── drag: document-level listeners, all math overlay-relative ─────────────
   const startDrag = (event) => {
     if (event.button !== 0) return;
-    if (event.target instanceof Element && event.target.closest("button, select, input, a")) return;
+    if (event.target instanceof Element && event.target.closest("button, select, input, a, .dtw-menu")) return;
     const bounds = overlayBounds(rootRef.current);
     const state = {
       pointerId: event.pointerId,
@@ -1114,22 +1192,7 @@ function TerminalWindow() {
         </div>
       </div>
       <div className="dtw-toolbar" onPointerDown={startDrag}>
-        <select
-          className="dtw-select"
-          value={shellChoice}
-          aria-label={localeT("shell")}
-          onChange={(event) => {
-            shellChoice = event.currentTarget.value;
-            bump();
-          }}
-        >
-          {shells.map((shell) => (
-            <option key={shell.kind} value={shell.kind} disabled={!shell.available}>
-              {shell.label}
-              {shell.available ? "" : "（" + localeT("unavailable") + "）"}
-            </option>
-          ))}
-        </select>
+        <ShellPicker shells={shells} />
         <button type="button" className="dtw-btn" onClick={handleNotify} disabled={activeId == null}>
           {localeT("notifyAgent")}
         </button>
